@@ -1,0 +1,35 @@
+image:
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+resources: 
+  limits:
+    cpu: 200m
+    memory: 228Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+spec:
+  sync:
+    minutes: 1 
+  rancher:
+    timeout: 5
+    secret: rancher-secret
+  argo:
+    namespace: argocd
+  rbac:
+    admin_group: KAAS
+  log:
+    level: INFO # CRITICAL, FATAL, ERROR, WARN, WARNING, INFO, DEBUG, NOTSET

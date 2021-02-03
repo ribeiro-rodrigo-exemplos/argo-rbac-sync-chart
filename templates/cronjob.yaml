@@ -1,0 +1,57 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ include "argo-rbac-sync.fullname" . }}-job 
+  labels:
+    {{- include "argo-rbac-sync.labels" . | nindent 4 }}
+spec:
+  schedule: "*/{{ .Values.spec.sync.minutes}} * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ include "argo-rbac-sync.fullname" . }}-account
+          containers:
+            - name: {{ .Chart.Name }}
+              image: "globokaas/argo-rbac-sync:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              resources: 
+                limits:
+                    cpu: {{ .Values.resources.limits.cpu}}
+                    memory: {{ .Values.resources.limits.memory}}
+                requests:
+                    cpu: {{ .Values.resources.requests.cpu}}
+                    memory: {{ .Values.resources.requests.memory}}
+              env:
+                - name: LOG_LEVEL
+                  value: {{.Values.spec.log.level}}
+                - name: ARGO_NAMESPACE
+                  value: {{.Values.spec.argo.namespace}}
+                - name: ADMIN_GROUP
+                  value: {{.Values.spec.rbac.admin_group}}
+                - name: RANCHER_TIMEOUT
+                  value:  {{ quote .Values.spec.rancher.timeout}}
+                - name: RANCHER_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{.Values.spec.rancher.secret}}
+                      key: token
+                - name: RANCHER_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{.Values.spec.rancher.secret}}
+                      key: url
+          restartPolicy: OnFailure
+                {{- with .Values.nodeSelector }}
+          nodeSelector:
+                {{- toYaml . | nindent 8 }}
+            {{- end }}
+            {{- with .Values.affinity }}
+          affinity:
+                {{- toYaml . | nindent 8 }}
+            {{- end }}
+            {{- with .Values.tolerations }}
+          tolerations:
+                {{- toYaml . | nindent 8 }}
+            {{- end }}
